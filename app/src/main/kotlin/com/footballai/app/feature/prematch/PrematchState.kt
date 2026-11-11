@@ -13,5 +13,10 @@ data class PrematchState(
     val isDebateRunning: Boolean = false,
     val notificationMessage: String? = null,
     val isRefreshing: Boolean = false,
-    val lastSyncTime: String = "Jamais"
+    val lastSyncTime: String = "Jamais",
+    // Temporal clock & filters
+    val deviceClockFormatted: String = "",
+    val deviceTimezone: String = "",
+    val searchQuery: String = "",
+    val selectedDateFilter: String = "Tous" // "Tous", "Aujourd'hui", "Demain"
 )

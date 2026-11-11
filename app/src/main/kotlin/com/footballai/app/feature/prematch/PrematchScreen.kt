@@ -22,16 +22,20 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -128,6 +132,127 @@ fun PrematchScreen(
                                 .size(16.dp)
                                 .clickable { viewModel.dismissNotification() }
                         )
+                    }
+                }
+            }
+
+            // 1. Phone Clock & Temporal Provenance Card
+            GlassCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AccessTime,
+                            contentDescription = "Horloge Téléphone",
+                            tint = LiquidGlassColors.AccentElectric,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column {
+                            Text(
+                                text = "Horloge : ${state.deviceClockFormatted.ifBlank { "Synchronisée" }}",
+                                style = LiquidGlassTypography.labelMedium,
+                                color = LiquidGlassColors.TextPrimary,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Fuseau : ${state.deviceTimezone} • Cotes 1xBet vérifiées",
+                                style = LiquidGlassTypography.labelSmall,
+                                color = LiquidGlassColors.TextSecondary,
+                                fontSize = 10.sp
+                            )
+                        }
+                    }
+
+                    StatusPill(state = GateState.OPEN, customLabel = "HORLOGE OK")
+                }
+            }
+
+            // 2. Search & Date Filter Controls
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp)
+            ) {
+                OutlinedTextField(
+                    value = state.searchQuery,
+                    onValueChange = { viewModel.onSearchQueryChanged(it) },
+                    placeholder = {
+                        Text(
+                            text = "Rechercher une équipe ou compétition 1xBet...",
+                            style = LiquidGlassTypography.bodySmall,
+                            color = LiquidGlassColors.TextMuted
+                        )
+                    },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Recherche",
+                            tint = LiquidGlassColors.AccentElectric,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    },
+                    trailingIcon = {
+                        if (state.searchQuery.isNotBlank()) {
+                            IconButton(onClick = { viewModel.onSearchQueryChanged("") }) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Effacer",
+                                    tint = LiquidGlassColors.TextSecondary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                    },
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = LiquidGlassColors.AccentElectric,
+                        unfocusedBorderColor = LiquidGlassColors.GlassBorderSubtle,
+                        focusedContainerColor = Color(0x20171B24),
+                        unfocusedContainerColor = Color(0x10171B24),
+                        focusedTextColor = LiquidGlassColors.TextPrimary,
+                        unfocusedTextColor = LiquidGlassColors.TextPrimary
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(10.dp)
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Date filter chips
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    listOf("Tous", "Aujourd'hui", "Demain").forEach { dateLabel ->
+                        val isSel = state.selectedDateFilter == dateLabel
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(if (isSel) LiquidGlassColors.AccentElectric.copy(alpha = 0.2f) else Color(0x15171B24))
+                                .border(1.dp, if (isSel) LiquidGlassColors.AccentElectric else LiquidGlassColors.GlassBorderSubtle, RoundedCornerShape(8.dp))
+                                .clickable { viewModel.onDateFilterSelected(dateLabel) }
+                                .padding(vertical = 6.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = dateLabel,
+                                style = LiquidGlassTypography.labelSmall,
+                                color = if (isSel) LiquidGlassColors.AccentElectric else LiquidGlassColors.TextSecondary,
+                                fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal
+                            )
+                        }
                     }
                 }
             }

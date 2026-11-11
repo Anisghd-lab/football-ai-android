@@ -21,15 +21,22 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material.icons.filled.Psychology
+import androidx.compose.material.icons.filled.Radar
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Sensors
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -99,7 +106,7 @@ fun LiveCenterScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Notification toast
+            // Toast Notification
             state.notificationMessage?.let { note ->
                 Box(
                     modifier = Modifier
@@ -131,44 +138,178 @@ fun LiveCenterScreen(
                 }
             }
 
-            // 1. Live Engine Operational Status Card
+            // 1. Phone Clock & Temporal Provenance Card (User Requirement)
             GlassCard(modifier = Modifier.fillMaxWidth()) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(10.dp)
-                                .clip(CircleShape)
-                                .background(LiquidGlassColors.StatusOpen)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AccessTime,
+                            contentDescription = "Horloge Téléphone",
+                            tint = LiquidGlassColors.AccentElectric,
+                            modifier = Modifier.size(20.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Moteur Live Débloqué • 1xBet",
-                            style = LiquidGlassTypography.titleMedium,
-                            color = LiquidGlassColors.TextPrimary,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Column {
+                            Text(
+                                text = "Horloge Téléphone : ${state.deviceClockFormatted.ifBlank { "Synchronisée" }}",
+                                style = LiquidGlassTypography.titleSmall,
+                                color = LiquidGlassColors.TextPrimary,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Fuseau : ${state.deviceTimezone} • Recherche temporelle 1xBet",
+                                style = LiquidGlassTypography.labelSmall,
+                                color = LiquidGlassColors.TextSecondary,
+                                fontSize = 11.sp
+                            )
+                        }
                     }
-                    StatusPill(state = GateState.OPEN, customLabel = "DIRECT ACTIF")
+
+                    StatusPill(state = GateState.OPEN, customLabel = "HORLOGE OK")
                 }
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "Télémétrie sub-60s active. Analyses IA dynamiques mises à jour en continu.",
-                    style = LiquidGlassTypography.bodySmall,
-                    color = LiquidGlassColors.TextSecondary,
-                    fontSize = 11.sp
-                )
             }
 
-            // 2. Active Live Matches Section
+            // 2. Search & Simulation Mode Controls
+            GlassCard(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = state.searchQuery,
+                        onValueChange = { viewModel.onSearchQueryChanged(it) },
+                        placeholder = {
+                            Text(
+                                text = "Rechercher une équipe ou compétition 1xBet...",
+                                style = LiquidGlassTypography.bodyMedium,
+                                color = LiquidGlassColors.TextMuted
+                            )
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = "Recherche",
+                                tint = LiquidGlassColors.AccentElectric
+                            )
+                        },
+                        trailingIcon = {
+                            if (state.searchQuery.isNotBlank()) {
+                                IconButton(onClick = { viewModel.onSearchQueryChanged("") }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "Effacer",
+                                        tint = LiquidGlassColors.TextSecondary
+                                    )
+                                }
+                            }
+                        },
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = LiquidGlassColors.AccentElectric,
+                            unfocusedBorderColor = LiquidGlassColors.GlassBorderSubtle,
+                            focusedContainerColor = Color(0x20171B24),
+                            unfocusedContainerColor = Color(0x10171B24),
+                            focusedTextColor = LiquidGlassColors.TextPrimary,
+                            unfocusedTextColor = LiquidGlassColors.TextPrimary
+                        ),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Mode switch: Direct Réel vs Simulation Démo
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(
+                                    if (!state.simulationMode) LiquidGlassColors.StatusOpen.copy(alpha = 0.25f)
+                                    else Color(0x1A171B24)
+                                )
+                                .border(
+                                    1.dp,
+                                    if (!state.simulationMode) LiquidGlassColors.StatusOpen
+                                    else LiquidGlassColors.GlassBorderSubtle,
+                                    RoundedCornerShape(8.dp)
+                                )
+                                .clickable {
+                                    if (state.simulationMode) viewModel.toggleSimulationMode()
+                                }
+                                .padding(vertical = 8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(8.dp)
+                                        .clip(CircleShape)
+                                        .background(if (!state.simulationMode) LiquidGlassColors.StatusOpen else LiquidGlassColors.TextMuted)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Direct Réel (1xBet)",
+                                    style = LiquidGlassTypography.labelMedium,
+                                    color = if (!state.simulationMode) LiquidGlassColors.TextPrimary else LiquidGlassColors.TextMuted,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(
+                                    if (state.simulationMode) LiquidGlassColors.AccentElectric.copy(alpha = 0.25f)
+                                    else Color(0x1A171B24)
+                                )
+                                .border(
+                                    1.dp,
+                                    if (state.simulationMode) LiquidGlassColors.AccentElectric
+                                    else LiquidGlassColors.GlassBorderSubtle,
+                                    RoundedCornerShape(8.dp)
+                                )
+                                .clickable {
+                                    if (!state.simulationMode) viewModel.toggleSimulationMode()
+                                }
+                                .padding(vertical = 8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.PlayCircle,
+                                    contentDescription = null,
+                                    tint = if (state.simulationMode) LiquidGlassColors.AccentElectric else LiquidGlassColors.TextMuted,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Mode Test IA",
+                                    style = LiquidGlassTypography.labelMedium,
+                                    color = if (state.simulationMode) LiquidGlassColors.AccentElectric else LiquidGlassColors.TextMuted,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 3. Live Matches List or Honest Empty State
             when (val liveState = state.liveEventsState) {
                 is SafeState.Loading -> {
                     LoadingState(
-                        message = "Chargement des rencontres en direct...",
+                        message = "Recherche des rencontres en direct selon l'heure du téléphone...",
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -180,42 +321,163 @@ fun LiveCenterScreen(
                     )
                 }
                 is SafeState.Available -> {
-                    Text(
-                        text = "Rencontres en Direct (${liveState.data.size})",
-                        style = LiquidGlassTypography.titleMedium,
-                        color = LiquidGlassColors.TextPrimary,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    liveState.data.forEach { event ->
-                        val isExpanded = state.selectedMatchId == event.eventId
-                        LiveMatchCard(
-                            event = event,
-                            isExpanded = isExpanded,
-                            analysisState = if (isExpanded) state.selectedMatchAnalysis else SafeState.Empty,
-                            onToggleAnalysis = {
-                                if (isExpanded) viewModel.closeAnalysis() else viewModel.requestAnalysis(event.eventId)
-                            },
-                            onAddToCoupon = { viewModel.addToCoupon(event) }
+                    val events = liveState.data
+                    if (events.isEmpty()) {
+                        // Honest Empty State (No match is live at current phone time)
+                        NoLiveMatchesCard(
+                            phoneClock = state.deviceClockFormatted,
+                            onEnableSimulation = { viewModel.toggleSimulationMode() }
                         )
+                    } else {
+                        Text(
+                            text = "Rencontres en Direct (${events.size})${if (state.simulationMode) " • Mode Test" else ""}",
+                            style = LiquidGlassTypography.titleMedium,
+                            color = LiquidGlassColors.TextPrimary,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        events.forEach { event ->
+                            val isExpanded = state.selectedMatchId == event.eventId
+                            LiveMatchCard(
+                                event = event,
+                                isExpanded = isExpanded,
+                                analysisState = if (isExpanded) state.selectedMatchAnalysis else SafeState.Empty,
+                                onToggleAnalysis = {
+                                    if (isExpanded) viewModel.closeAnalysis() else viewModel.requestAnalysis(event.eventId)
+                                },
+                                onAddToCoupon = { viewModel.addToCoupon(event) }
+                            )
+                        }
                     }
                 }
+                is SafeState.Empty -> {
+                    NoLiveMatchesCard(
+                        phoneClock = state.deviceClockFormatted,
+                        onEnableSimulation = { viewModel.toggleSimulationMode() }
+                    )
+                }
                 else -> {
-                    Text(
-                        text = "Aucun match en direct actuellement.",
-                        style = LiquidGlassTypography.bodyMedium,
-                        color = LiquidGlassColors.TextSecondary
+                    NoLiveMatchesCard(
+                        phoneClock = state.deviceClockFormatted,
+                        onEnableSimulation = { viewModel.toggleSimulationMode() }
                     )
                 }
             }
 
-            // 3. WebSocket Card
+            // 4. WebSocket Status Card
             WebSocketCard(
                 wsStatus = state.wsStatus,
                 lastPong = state.lastPongMessage,
                 onConnect = { viewModel.connectWebSocket() },
                 onPing = { viewModel.sendPing() },
                 onDisconnect = { viewModel.disconnectWebSocket() }
+            )
+        }
+    }
+}
+
+@Composable
+private fun NoLiveMatchesCard(
+    phoneClock: String,
+    onEnableSimulation: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    GlassCard(modifier = modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(54.dp)
+                    .clip(CircleShape)
+                    .background(Color(0x20438DFF))
+                    .border(1.dp, LiquidGlassColors.AccentElectric.copy(alpha = 0.5f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Radar,
+                    contentDescription = "Radar",
+                    tint = LiquidGlassColors.AccentElectric,
+                    modifier = Modifier.size(28.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            Text(
+                text = "Aucun match en direct en ce moment",
+                style = LiquidGlassTypography.titleMedium,
+                color = LiquidGlassColors.TextPrimary,
+                fontWeight = FontWeight.Bold
+            )
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Text(
+                text = "À l'heure de votre téléphone (${phoneClock.ifBlank { "en ce moment" }}), aucun match n'est actuellement en cours sur 1xBet. L'application évite d'afficher des rencontres fictives.",
+                style = LiquidGlassTypography.bodySmall,
+                color = LiquidGlassColors.TextSecondary,
+                fontSize = 12.sp,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Upcoming Match banner
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Color(0x25171B24))
+                    .border(0.5.dp, LiquidGlassColors.GlassBorderSubtle, RoundedCornerShape(10.dp))
+                    .padding(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = "⚽ Prochain match : Arsenal vs Chelsea",
+                            style = LiquidGlassTypography.labelMedium,
+                            color = LiquidGlassColors.TextPrimary,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "Premier League • Cotes 1xBet : 1.22 (1X)",
+                            style = LiquidGlassTypography.labelSmall,
+                            color = LiquidGlassColors.TextMuted,
+                            fontSize = 11.sp
+                        )
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(Color(0x33438DFF))
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = "À venir",
+                            style = LiquidGlassTypography.labelSmall,
+                            color = LiquidGlassColors.AccentElectric,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            GlassButton(
+                text = "Activer le Mode Test IA (Simulation)",
+                onClick = onEnableSimulation,
+                icon = Icons.Default.PlayCircle,
+                modifier = Modifier.fillMaxWidth()
             )
         }
     }
@@ -232,17 +494,27 @@ private fun LiveMatchCard(
 ) {
     GlassCard(modifier = modifier.fillMaxWidth()) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            // Header: Sport, Competition & 1xBet
+            // Header: Sport, Competition & 1xBet Live
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "${event.sport.iconLabel} ${event.competition}",
-                    style = LiquidGlassTypography.labelMedium,
-                    color = LiquidGlassColors.TextSecondary
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Sensors,
+                        contentDescription = "Live",
+                        tint = LiquidGlassColors.StatusClosed,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "${event.sport.iconLabel} ${event.competition}",
+                        style = LiquidGlassTypography.labelMedium,
+                        color = LiquidGlassColors.TextSecondary
+                    )
+                }
+
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(6.dp))
@@ -262,7 +534,7 @@ private fun LiveMatchCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Score & Match Clock
+            // Teams & Score / Match Clock
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -300,7 +572,7 @@ private fun LiveMatchCard(
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = event.liveClockOrPeriod ?: "70'",
+                            text = event.liveClockOrPeriod ?: "En cours",
                             style = LiquidGlassTypography.labelSmall,
                             color = LiquidGlassColors.TextPrimary,
                             fontSize = 10.sp
@@ -311,7 +583,7 @@ private fun LiveMatchCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Buttons: AI Live Analysis + Add to Coupon
+            // Action Buttons: AI Live Analysis + Add to Coupon
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -385,7 +657,11 @@ private fun LiveMatchCard(
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("Calcul des probabilités en direct...", style = LiquidGlassTypography.bodySmall, color = LiquidGlassColors.TextSecondary)
+                                Text(
+                                    text = "Calcul des probabilités en direct...",
+                                    style = LiquidGlassTypography.bodySmall,
+                                    color = LiquidGlassColors.TextSecondary
+                                )
                             }
                         }
                         is SafeState.Available -> {

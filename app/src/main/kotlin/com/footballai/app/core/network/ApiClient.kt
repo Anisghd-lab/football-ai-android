@@ -51,13 +51,23 @@ class ApiClient(
         return performGet("$baseUrl/api/governance/coupon-pool-status")
     }
 
-    suspend fun getMultisportEvents(baseUrl: String, timingMode: String? = null): NetworkResult<List<SportEventDto>> {
-        val url = if (timingMode != null) {
-            "$baseUrl/api/multisport/events?timing_mode=$timingMode"
-        } else {
-            "$baseUrl/api/multisport/events"
-        }
-        return performGet(url)
+    suspend fun getMultisportEvents(
+        baseUrl: String,
+        timingMode: String? = null,
+        clientTimeIso: String? = null,
+        searchQuery: String? = null,
+        dateFilter: String? = null,
+        allowSimulation: Boolean = false
+    ): NetworkResult<List<SportEventDto>> {
+        val params = mutableListOf<String>()
+        if (timingMode != null) params.add("timing_mode=$timingMode")
+        if (clientTimeIso != null) params.add("client_time_iso=$clientTimeIso")
+        if (!searchQuery.isNullOrBlank()) params.add("search=${java.net.URLEncoder.encode(searchQuery, "UTF-8")}")
+        if (!dateFilter.isNullOrBlank()) params.add("date_filter=${java.net.URLEncoder.encode(dateFilter, "UTF-8")}")
+        if (allowSimulation) params.add("allow_simulation=true")
+
+        val queryString = if (params.isNotEmpty()) "?" + params.joinToString("&") else ""
+        return performGet("$baseUrl/api/multisport/events$queryString")
     }
 
     suspend fun getDataQualificationReport(baseUrl: String): NetworkResult<DataQualificationReportDto> {
@@ -107,9 +117,10 @@ class ApiClient(
     suspend fun generateCoupon(
         baseUrl: String,
         simulatedStake: Double = 10.0,
-        selectionIds: List<String>? = null
+        selectionIds: List<String>? = null,
+        allowSimulation: Boolean = false
     ): NetworkResult<CouponRecordDto> {
-        val payload = json.encodeToString(CouponGenerateRequestDto(selectionIds, simulatedStake))
+        val payload = json.encodeToString(CouponGenerateRequestDto(selectionIds, simulatedStake, allowSimulation))
         return performPost("$baseUrl/api/multisport/coupon-confiance/generate", payload)
     }
 

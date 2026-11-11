@@ -16,9 +16,21 @@ class MultisportRepository(
     private val preferences: AppPreferences
 ) {
 
-    suspend fun getPrematchEvents(sportFilter: SportType? = null): SafeState<List<SportEvent>> {
+    suspend fun getPrematchEvents(
+        sportFilter: SportType? = null,
+        searchQuery: String? = null,
+        dateFilter: String? = null
+    ): SafeState<List<SportEvent>> {
         val baseUrl = preferences.backendUrlFlow.first()
-        val result = apiClient.getMultisportEvents(baseUrl, timingMode = "prematch")
+        val clientTime = java.time.Instant.now().toString()
+        val result = apiClient.getMultisportEvents(
+            baseUrl = baseUrl,
+            timingMode = "prematch",
+            clientTimeIso = clientTime,
+            searchQuery = searchQuery,
+            dateFilter = dateFilter,
+            allowSimulation = false
+        )
 
         return when (result) {
             is NetworkResult.Success -> {
@@ -43,9 +55,20 @@ class MultisportRepository(
         }
     }
 
-    suspend fun getLiveEvents(sportFilter: SportType? = null): SafeState<List<SportEvent>> {
+    suspend fun getLiveEvents(
+        sportFilter: SportType? = null,
+        searchQuery: String? = null,
+        allowSimulation: Boolean = false
+    ): SafeState<List<SportEvent>> {
         val baseUrl = preferences.backendUrlFlow.first()
-        val result = apiClient.getMultisportEvents(baseUrl, timingMode = "live")
+        val clientTime = java.time.Instant.now().toString()
+        val result = apiClient.getMultisportEvents(
+            baseUrl = baseUrl,
+            timingMode = "live",
+            clientTimeIso = clientTime,
+            searchQuery = searchQuery,
+            allowSimulation = allowSimulation
+        )
 
         return when (result) {
             is NetworkResult.Success -> {

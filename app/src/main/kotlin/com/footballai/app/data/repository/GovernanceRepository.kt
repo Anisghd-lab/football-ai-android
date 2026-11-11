@@ -76,10 +76,14 @@ class GovernanceRepository(
         }
     }
 
-    suspend fun generateCoupon(stake: Double, selectionIds: List<String>? = null): SafeState<com.footballai.app.core.model.CouponConfiance> {
+    suspend fun generateCoupon(
+        stake: Double,
+        selectionIds: List<String>? = null,
+        allowSimulation: Boolean = false
+    ): SafeState<com.footballai.app.core.model.CouponConfiance> {
         val baseUrl = preferences.backendUrlFlow.first()
         val lastSync = preferences.lastSyncFlow.first()
-        return when (val res = apiClient.generateCoupon(baseUrl, stake, selectionIds)) {
+        return when (val res = apiClient.generateCoupon(baseUrl, stake, selectionIds, allowSimulation)) {
             is NetworkResult.Success -> {
                 val dto = res.data
                 val selections = dto.selections.map { s ->

@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 class PrematchViewModel(
     private val multisportRepository: MultisportRepository
@@ -25,17 +26,32 @@ class PrematchViewModel(
     private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss")
         .withZone(ZoneId.systemDefault())
 
+    private val fullDateFormatter = DateTimeFormatter.ofPattern("EEEE d MMMM yyyy • HH:mm:ss", Locale.FRENCH)
+        .withZone(ZoneId.systemDefault())
+
     init {
+        updateDeviceClock()
         loadEvents()
     }
 
     fun selectSport(sport: SportType) {
         _uiState.update { it.copy(selectedSport = sport) }
-        loadEvents(sport)
+        loadEvents()
+    }
+
+    fun onSearchQueryChanged(query: String) {
+        _uiState.update { it.copy(searchQuery = query) }
+        loadEvents()
+    }
+
+    fun onDateFilterSelected(filter: String) {
+        _uiState.update { it.copy(selectedDateFilter = filter) }
+        loadEvents()
     }
 
     fun refresh() {
-        loadEvents(_uiState.value.selectedSport)
+        updateDeviceClock()
+        loadEvents()
     }
 
     fun requestAnalysis(matchId: String) {
@@ -60,11 +76,35 @@ class PrematchViewModel(
         _uiState.update { it.copy(notificationMessage = null) }
     }
 
-    private fun loadEvents(sport: SportType = _uiState.value.selectedSport) {
+    private fun updateDeviceClock() {
+        val now = Instant.now()
+        val zone = ZoneId.systemDefault()
+        val formattedDate = fullDateFormatter.format(now).replaceFirstChar { it.uppercase() }
+        _uiState.update {
+            it.copy(
+                deviceClockFormatted = formattedDate,
+                deviceTimezone = zone.id
+            )
+        }
+    }
+
+    private fun loadEvents() {
         viewModelScope.launch {
             _uiState.update { it.copy(isRefreshing = true) }
-            val filter = if (sport == SportType.UNKNOWN) null else sport
-            val result = multisportRepository.getPrematchEvents(filter)
+            updateDeviceClock()
+
+            val currentState = _uiState.value
+            val filter = if (currentState.selectedSport == SportType.UNKNOWN) null else currentState.selectedSport
+            val dateParam = when (currentState.selectedDateFilter) {
+                "Aujourd'hui" -> "today"
+                "Demain" -> "tomorrow"
+                else -> null
+            }
+            val result = multisportRepository.getPrematchEvents(
+                sportFilter = filter,
+                searchQuery = currentState.searchQuery.ifBlank { null },
+                dateFilter = dateParam
+            )
             val nowStr = timeFormatter.format(Instant.now())
             _uiState.update {
                 it.copy(

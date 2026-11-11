@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.footballai.app.core.model.LiveStreamEvent
 import com.footballai.app.core.model.SafeState
 import com.footballai.app.core.model.SportEvent
+import com.footballai.app.core.model.SportType
 import com.footballai.app.data.repository.GovernanceRepository
 import com.footballai.app.data.repository.LiveRepository
 import com.footballai.app.data.repository.MultisportRepository
@@ -16,6 +17,7 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 class LiveCenterViewModel(
     private val liveRepository: LiveRepository,
@@ -29,12 +31,37 @@ class LiveCenterViewModel(
     private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss")
         .withZone(ZoneId.systemDefault())
 
+    private val fullDateFormatter = DateTimeFormatter.ofPattern("EEEE d MMMM yyyy • HH:mm:ss", Locale.FRENCH)
+        .withZone(ZoneId.systemDefault())
+
     init {
+        updateDeviceClock()
         loadData()
         observeWebSocket()
     }
 
     fun refresh() {
+        updateDeviceClock()
+        loadData()
+    }
+
+    fun onSearchQueryChanged(query: String) {
+        _uiState.update { it.copy(searchQuery = query) }
+        loadData()
+    }
+
+    fun onDateFilterSelected(filter: String) {
+        _uiState.update { it.copy(selectedDateFilter = filter) }
+        loadData()
+    }
+
+    fun onSportSelected(sport: SportType) {
+        _uiState.update { it.copy(selectedSport = sport) }
+        loadData()
+    }
+
+    fun toggleSimulationMode() {
+        _uiState.update { it.copy(simulationMode = !it.simulationMode) }
         loadData()
     }
 
@@ -75,13 +102,32 @@ class LiveCenterViewModel(
         _uiState.update { it.copy(notificationMessage = null) }
     }
 
+    private fun updateDeviceClock() {
+        val now = Instant.now()
+        val zone = ZoneId.systemDefault()
+        val formattedDate = fullDateFormatter.format(now).replaceFirstChar { it.uppercase() }
+        _uiState.update {
+            it.copy(
+                deviceClockFormatted = formattedDate,
+                deviceTimezone = zone.id
+            )
+        }
+    }
+
     private fun loadData() {
         viewModelScope.launch {
             _uiState.update { it.copy(isRefreshing = true) }
+            updateDeviceClock()
+
             // Auto-unlock live engine
             governanceRepository?.unlockLiveEngine()
 
-            val liveEvents = multisportRepository.getLiveEvents()
+            val currentState = _uiState.value
+            val liveEvents = multisportRepository.getLiveEvents(
+                sportFilter = if (currentState.selectedSport != SportType.UNKNOWN) currentState.selectedSport else null,
+                searchQuery = currentState.searchQuery.ifBlank { null },
+                allowSimulation = currentState.simulationMode
+            )
             val coverage = liveRepository.getLiveCoverage()
             val nowStr = timeFormatter.format(Instant.now())
             _uiState.update {

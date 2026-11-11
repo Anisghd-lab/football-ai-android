@@ -4,6 +4,7 @@ import com.footballai.app.core.model.LiveCoverageItem
 import com.footballai.app.core.model.MatchAiAnalysis
 import com.footballai.app.core.model.SafeState
 import com.footballai.app.core.model.SportEvent
+import com.footballai.app.core.model.SportType
 import com.footballai.app.core.model.WebSocketStreamStatus
 
 data class LiveCenterState(
@@ -15,5 +16,12 @@ data class LiveCenterState(
     val wsStatus: WebSocketStreamStatus = WebSocketStreamStatus.CONNECTED,
     val lastPongMessage: String? = null,
     val isRefreshing: Boolean = false,
-    val lastSyncTime: String = "Jamais"
+    val lastSyncTime: String = "Jamais",
+    // Temporal device clock & provenance
+    val deviceClockFormatted: String = "",
+    val deviceTimezone: String = "",
+    val searchQuery: String = "",
+    val selectedDateFilter: String = "Tous", // "Tous", "Aujourd'hui", "Demain"
+    val selectedSport: SportType = SportType.UNKNOWN,
+    val simulationMode: Boolean = false // Toggle for demo/test simulation
 )

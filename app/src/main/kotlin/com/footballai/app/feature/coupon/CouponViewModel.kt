@@ -43,7 +43,7 @@ class CouponViewModel(
             governanceRepository.unlockCouponPool()
 
             val currentStake = _uiState.value.simulatedStake
-            val result = governanceRepository.generateCoupon(currentStake)
+            val result = governanceRepository.generateCoupon(currentStake, allowSimulation = false)
             val nowStr = timeFormatter.format(Instant.now())
             _uiState.update {
                 it.copy(

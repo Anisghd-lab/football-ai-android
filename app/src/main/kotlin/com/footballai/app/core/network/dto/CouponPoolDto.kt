@@ -51,5 +51,6 @@ data class CouponRecordDto(
 @Serializable
 data class CouponGenerateRequestDto(
     @SerialName("selection_ids") val selectionIds: List<String>? = null,
-    @SerialName("simulated_stake") val simulatedStake: Double = 10.0
+    @SerialName("simulated_stake") val simulatedStake: Double = 10.0,
+    @SerialName("allow_simulation") val allowSimulation: Boolean = false
 )
