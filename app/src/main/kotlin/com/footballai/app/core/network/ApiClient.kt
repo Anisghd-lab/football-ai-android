@@ -1,9 +1,14 @@
 package com.footballai.app.core.network
 
 import com.footballai.app.core.network.dto.AgentRoleDto
+import com.footballai.app.core.network.dto.AuditCalibrationResponseDto
+import com.footballai.app.core.network.dto.BacktestReportDto
 import com.footballai.app.core.network.dto.CouponPoolStatusDto
 import com.footballai.app.core.network.dto.DataQualificationReportDto
 import com.footballai.app.core.network.dto.DebateResponseDto
+import com.footballai.app.core.network.dto.LiveCoverageItemDto
+import com.footballai.app.core.network.dto.MarketCalibrationItemDto
+import com.footballai.app.core.network.dto.MarketCategoriesDto
 import com.footballai.app.core.network.dto.ProviderDto
 import com.footballai.app.core.network.dto.SourceRegistryItemDto
 import com.footballai.app.core.network.dto.SportEventDto
@@ -73,6 +78,26 @@ class ApiClient(
 
     suspend fun triggerDebate(baseUrl: String, matchId: String): NetworkResult<DebateResponseDto> {
         return performPost("$baseUrl/api/debate/$matchId", "")
+    }
+
+    suspend fun getMarketCategories(baseUrl: String): NetworkResult<MarketCategoriesDto> {
+        return performGet("$baseUrl/api/markets/categories")
+    }
+
+    suspend fun getMarketCalibration(baseUrl: String): NetworkResult<List<MarketCalibrationItemDto>> {
+        return performGet("$baseUrl/api/markets/calibration")
+    }
+
+    suspend fun getBacktestReport(baseUrl: String): NetworkResult<BacktestReportDto> {
+        return performGet("$baseUrl/api/audit/backtest")
+    }
+
+    suspend fun getAuditCalibration(baseUrl: String): NetworkResult<AuditCalibrationResponseDto> {
+        return performGet("$baseUrl/api/audit/calibration")
+    }
+
+    suspend fun getLiveCoverage(baseUrl: String): NetworkResult<List<LiveCoverageItemDto>> {
+        return performGet("$baseUrl/api/audit/live-markets/coverage")
     }
 
     suspend fun testConnection(baseUrl: String): Pair<Boolean, Long> = withContext(Dispatchers.IO) {
