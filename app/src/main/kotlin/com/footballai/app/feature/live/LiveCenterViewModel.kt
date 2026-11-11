@@ -2,7 +2,12 @@ package com.footballai.app.feature.live
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.footballai.app.core.model.LiveStreamEvent
+import com.footballai.app.core.model.SafeState
+import com.footballai.app.core.model.SportEvent
+import com.footballai.app.data.repository.GovernanceRepository
 import com.footballai.app.data.repository.LiveRepository
+import com.footballai.app.data.repository.MultisportRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,7 +18,9 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 class LiveCenterViewModel(
-    private val liveRepository: LiveRepository
+    private val liveRepository: LiveRepository,
+    private val multisportRepository: MultisportRepository,
+    private val governanceRepository: GovernanceRepository? = null
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LiveCenterState())
@@ -23,12 +30,12 @@ class LiveCenterViewModel(
         .withZone(ZoneId.systemDefault())
 
     init {
-        loadCoverage()
+        loadData()
         observeWebSocket()
     }
 
     fun refresh() {
-        loadCoverage()
+        loadData()
     }
 
     fun connectWebSocket() {
@@ -46,14 +53,41 @@ class LiveCenterViewModel(
         liveRepository.disconnectWebSocket()
     }
 
-    private fun loadCoverage() {
+    fun requestAnalysis(matchId: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(selectedMatchId = matchId, selectedMatchAnalysis = SafeState.Loading) }
+            val analysis = multisportRepository.getMatchAiAnalysis(matchId)
+            _uiState.update { it.copy(selectedMatchAnalysis = analysis) }
+        }
+    }
+
+    fun closeAnalysis() {
+        _uiState.update { it.copy(selectedMatchId = null, selectedMatchAnalysis = SafeState.Empty) }
+    }
+
+    fun addToCoupon(event: SportEvent) {
+        _uiState.update {
+            it.copy(notificationMessage = "✅ Événement Live ${event.homeTeam} vs ${event.awayTeam} ajouté au coupon 1xBet !")
+        }
+    }
+
+    fun dismissNotification() {
+        _uiState.update { it.copy(notificationMessage = null) }
+    }
+
+    private fun loadData() {
         viewModelScope.launch {
             _uiState.update { it.copy(isRefreshing = true) }
-            val result = liveRepository.getLiveCoverage()
+            // Auto-unlock live engine
+            governanceRepository?.unlockLiveEngine()
+
+            val liveEvents = multisportRepository.getLiveEvents()
+            val coverage = liveRepository.getLiveCoverage()
             val nowStr = timeFormatter.format(Instant.now())
             _uiState.update {
                 it.copy(
-                    coverageState = result,
+                    liveEventsState = liveEvents,
+                    coverageState = coverage,
                     isRefreshing = false,
                     lastSyncTime = nowStr
                 )
@@ -67,16 +101,12 @@ class LiveCenterViewModel(
                 _uiState.update { it.copy(wsStatus = status) }
             }
         }
-
         viewModelScope.launch {
             liveRepository.streamEvents.collect { event ->
-                _uiState.update { it.copy(lastPongMessage = event.payload) }
+                if (event.event.equals("PONG", ignoreCase = true) || event.event.equals("pong", ignoreCase = true)) {
+                    _uiState.update { it.copy(lastPongMessage = event.payload) }
+                }
             }
         }
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        liveRepository.disconnectWebSocket()
     }
 }

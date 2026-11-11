@@ -17,14 +17,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Analytics
+import androidx.compose.material.icons.filled.ConfirmationNumber
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Psychology
-import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Storefront
+import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -73,7 +71,7 @@ class MainActivity : ComponentActivity() {
         val app = application as FootballAiApp
         val dashboardViewModel = DashboardViewModel(app.governanceRepository)
         val prematchViewModel = PrematchViewModel(app.multisportRepository)
-        val liveCenterViewModel = LiveCenterViewModel(app.liveRepository)
+        val liveCenterViewModel = LiveCenterViewModel(app.liveRepository, app.multisportRepository, app.governanceRepository)
         val councilViewModel = CouncilViewModel(app.councilRepository)
         val marketViewModel = MarketViewModel(app.marketRepository)
         val backtestingViewModel = BacktestingViewModel(app.auditRepository)
@@ -116,17 +114,18 @@ fun MainContent(
     settingsViewModel: SettingsViewModel,
     modifier: Modifier = Modifier
 ) {
-    var currentRoute by remember { mutableStateOf("dashboard") }
+    // Default to "coupon" or "prematch" directly
+    var currentRoute by remember { mutableStateOf("coupon") }
 
     val navItems = listOf(
         NavItem(
-            route = "dashboard",
-            title = "Dashboard",
-            icon = Icons.Default.Dashboard
+            route = "coupon",
+            title = "Coupons IA",
+            icon = Icons.Default.ConfirmationNumber
         ),
         NavItem(
             route = "prematch",
-            title = "Prematch",
+            title = "Matchs & IA",
             icon = Icons.Default.DateRange
         ),
         NavItem(
@@ -140,14 +139,9 @@ fun MainContent(
             icon = Icons.Default.Psychology
         ),
         NavItem(
-            route = "markets",
-            title = "Marchés",
-            icon = Icons.Default.Storefront
-        ),
-        NavItem(
             route = "settings",
-            title = "Plus...",
-            icon = Icons.Default.Settings
+            title = "Hôte Termux",
+            icon = Icons.Default.Terminal
         )
     )
 
@@ -162,45 +156,47 @@ fun MainContent(
         }
     ) { _ ->
         Column(modifier = Modifier.fillMaxSize()) {
-            // Secondary quick switcher for extra sections if in "settings", "backtesting", "dataintelligence" or "coupon"
-            if (currentRoute in listOf("settings", "backtesting", "dataintelligence", "coupon")) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(LiquidGlassColors.BackgroundNight)
-                        .horizontalScroll(rememberScrollState())
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    val subRoutes = listOf(
-                        Pair("settings", "Diagnostic & Paramètres"),
-                        Pair("backtesting", "Model Lab & Backtest"),
-                        Pair("dataintelligence", "Données & Audit"),
-                        Pair("coupon", "Coupon Confiance")
-                    )
+            // Secondary quick switcher for extra analytical tools
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(LiquidGlassColors.BackgroundNight)
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                val subRoutes = listOf(
+                    Pair("coupon", "🎫 Générateur Coupon (1xBet)"),
+                    Pair("prematch", "⚽ Matchs & Analyses"),
+                    Pair("live", "⚡ Direct & Télémétrie"),
+                    Pair("council", "🧠 Débat du Conseil"),
+                    Pair("dashboard", "📊 Dashboard État"),
+                    Pair("markets", "📈 Marchés & Cotes"),
+                    Pair("backtesting", "🧪 Model Lab ECE"),
+                    Pair("settings", "🖥️ Hôte Termux & Token")
+                )
 
-                    subRoutes.forEach { (route, label) ->
-                        val isSelected = currentRoute == route
-                        val bg = if (isSelected) LiquidGlassColors.AccentElectric.copy(alpha = 0.22f) else Color(0x1A091E42)
-                        val border = if (isSelected) LiquidGlassColors.AccentElectric else LiquidGlassColors.GlassBorderSubtle
-                        val textCol = if (isSelected) LiquidGlassColors.AccentElectric else LiquidGlassColors.TextSecondary
+                subRoutes.forEach { (route, label) ->
+                    val isSelected = currentRoute == route
+                    val bg = if (isSelected) LiquidGlassColors.AccentElectric.copy(alpha = 0.22f) else Color(0x20171B24)
+                    val border = if (isSelected) LiquidGlassColors.AccentElectric else LiquidGlassColors.GlassBorderSubtle
+                    val textCol = if (isSelected) LiquidGlassColors.AccentElectric else LiquidGlassColors.TextSecondary
 
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(bg)
-                                .border(0.5.dp, border, RoundedCornerShape(16.dp))
-                                .clickable { currentRoute = route }
-                                .padding(horizontal = 10.dp, vertical = 6.dp)
-                        ) {
-                            Text(
-                                text = label,
-                                style = LiquidGlassTypography.labelSmall,
-                                color = textCol,
-                                fontSize = 11.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                            )
-                        }
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(bg)
+                            .border(0.5.dp, border, RoundedCornerShape(16.dp))
+                            .clickable { currentRoute = route }
+                            .padding(horizontal = 10.dp, vertical = 5.dp)
+                    ) {
+                        Text(
+                            text = label,
+                            style = LiquidGlassTypography.labelSmall,
+                            color = textCol,
+                            fontSize = 11.sp,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                        )
                     }
                 }
             }
@@ -208,14 +204,14 @@ fun MainContent(
             // Screen container
             Box(modifier = Modifier.weight(1f)) {
                 when (currentRoute) {
-                    "dashboard" -> DashboardScreen(viewModel = dashboardViewModel)
+                    "coupon" -> CouponScreen(viewModel = couponViewModel)
                     "prematch" -> PrematchScreen(viewModel = prematchViewModel)
                     "live" -> LiveCenterScreen(viewModel = liveCenterViewModel)
                     "council" -> CouncilScreen(viewModel = councilViewModel)
+                    "dashboard" -> DashboardScreen(viewModel = dashboardViewModel)
                     "markets" -> MarketIntelligenceScreen(viewModel = marketViewModel)
                     "backtesting" -> BacktestingScreen(viewModel = backtestingViewModel)
                     "dataintelligence" -> DataIntelligenceScreen(viewModel = dataIntelligenceViewModel)
-                    "coupon" -> CouponScreen(viewModel = couponViewModel)
                     "settings" -> SettingsScreen(viewModel = settingsViewModel)
                 }
             }

@@ -3,12 +3,15 @@ package com.footballai.app.core.network
 import com.footballai.app.core.network.dto.AgentRoleDto
 import com.footballai.app.core.network.dto.AuditCalibrationResponseDto
 import com.footballai.app.core.network.dto.BacktestReportDto
+import com.footballai.app.core.network.dto.CouponGenerateRequestDto
 import com.footballai.app.core.network.dto.CouponPoolStatusDto
+import com.footballai.app.core.network.dto.CouponRecordDto
 import com.footballai.app.core.network.dto.DataQualificationReportDto
 import com.footballai.app.core.network.dto.DebateResponseDto
 import com.footballai.app.core.network.dto.LiveCoverageItemDto
 import com.footballai.app.core.network.dto.MarketCalibrationItemDto
 import com.footballai.app.core.network.dto.MarketCategoriesDto
+import com.footballai.app.core.network.dto.MatchAnalysisResponseDto
 import com.footballai.app.core.network.dto.ProviderDto
 import com.footballai.app.core.network.dto.SourceRegistryItemDto
 import com.footballai.app.core.network.dto.SportEventDto
@@ -16,6 +19,7 @@ import com.footballai.app.core.network.dto.SportReadinessDto
 import com.footballai.app.core.network.dto.SystemReadinessReportDto
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -98,6 +102,31 @@ class ApiClient(
 
     suspend fun getLiveCoverage(baseUrl: String): NetworkResult<List<LiveCoverageItemDto>> {
         return performGet("$baseUrl/api/audit/live-markets/coverage")
+    }
+
+    suspend fun generateCoupon(
+        baseUrl: String,
+        simulatedStake: Double = 10.0,
+        selectionIds: List<String>? = null
+    ): NetworkResult<CouponRecordDto> {
+        val payload = json.encodeToString(CouponGenerateRequestDto(selectionIds, simulatedStake))
+        return performPost("$baseUrl/api/multisport/coupon-confiance/generate", payload)
+    }
+
+    suspend fun getCouponHistory(baseUrl: String): NetworkResult<List<CouponRecordDto>> {
+        return performGet("$baseUrl/api/multisport/coupon-confiance/history")
+    }
+
+    suspend fun unlockCouponPool(baseUrl: String): NetworkResult<CouponPoolStatusDto> {
+        return performPost("$baseUrl/api/governance/coupon-pool/unlock", "{}")
+    }
+
+    suspend fun unlockLiveEngine(baseUrl: String): NetworkResult<Map<String, String>> {
+        return performPost("$baseUrl/api/governance/unlock-live-engine", "{}")
+    }
+
+    suspend fun getMatchAnalysis(baseUrl: String, matchId: String): NetworkResult<MatchAnalysisResponseDto> {
+        return performGet("$baseUrl/api/matches/$matchId/analysis")
     }
 
     suspend fun testConnection(baseUrl: String): Pair<Boolean, Long> = withContext(Dispatchers.IO) {

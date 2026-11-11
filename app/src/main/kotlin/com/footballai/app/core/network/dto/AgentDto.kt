@@ -38,3 +38,31 @@ data class PredictionResponseDto(
     @SerialName("consensus") val consensus: String? = null,
     @SerialName("probability_status") val probabilityStatus: String? = null
 )
+
+@Serializable
+data class AgentAnalysisItemDto(
+    @SerialName("role") val role: String? = null,
+    @SerialName("name") val name: String? = null,
+    @SerialName("probabilities") val probabilities: Map<String, Double> = emptyMap(),
+    @SerialName("summary") val summary: String? = null,
+    @SerialName("confidence") val confidence: Double? = null
+)
+
+@Serializable
+data class AnalysisConsensusDto(
+    @SerialName("home_win") val homeWin: Double? = null,
+    @SerialName("draw") val draw: Double? = null,
+    @SerialName("away_win") val awayWin: Double? = null,
+    @SerialName("recommended_selection") val recommendedSelection: String? = null,
+    @SerialName("fair_odds") val fairOdds: Double? = null,
+    @SerialName("disagreement_index") val disagreementIndex: Double? = null,
+    @SerialName("confidence") val confidence: Double? = null
+)
+
+@Serializable
+data class MatchAnalysisResponseDto(
+    @SerialName("match_id") val matchId: String? = null,
+    @SerialName("analyses") val analyses: List<AgentAnalysisItemDto> = emptyList(),
+    @SerialName("summary") val summary: String? = null,
+    @SerialName("consensus") val consensus: AnalysisConsensusDto? = null
+)

@@ -35,11 +35,11 @@ fun GlassCard(
             // Layer 1: Outer Glass Shell
             Box(
                 modifier = modifier
-                    .shadow(elevation = 8.dp, shape = LiquidGlassShapes.OuterShell, spotColor = Color(0x3300D2FF))
+                    .shadow(elevation = 8.dp, shape = LiquidGlassShapes.OuterShell, spotColor = Color(0x33438DFF))
                     .clip(LiquidGlassShapes.OuterShell)
                     .background(LiquidGlassColors.GlassShellBrush)
                     .border(width = 1.dp, brush = LiquidGlassColors.GlassBorderBrush, shape = LiquidGlassShapes.OuterShell)
-                    .padding(3.dp)
+                    .padding(2.dp)
             ) {
                 // Layer 2: Inner Stabilized Plate
                 Box(

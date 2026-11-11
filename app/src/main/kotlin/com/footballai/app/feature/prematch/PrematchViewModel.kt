@@ -3,6 +3,7 @@ package com.footballai.app.feature.prematch
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.footballai.app.core.model.SafeState
+import com.footballai.app.core.model.SportEvent
 import com.footballai.app.core.model.SportType
 import com.footballai.app.data.repository.MultisportRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,6 +36,28 @@ class PrematchViewModel(
 
     fun refresh() {
         loadEvents(_uiState.value.selectedSport)
+    }
+
+    fun requestAnalysis(matchId: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(selectedMatchId = matchId, selectedMatchAnalysis = SafeState.Loading) }
+            val analysis = multisportRepository.getMatchAiAnalysis(matchId)
+            _uiState.update { it.copy(selectedMatchAnalysis = analysis) }
+        }
+    }
+
+    fun closeAnalysis() {
+        _uiState.update { it.copy(selectedMatchId = null, selectedMatchAnalysis = SafeState.Empty) }
+    }
+
+    fun addToCoupon(event: SportEvent) {
+        _uiState.update {
+            it.copy(notificationMessage = "✅ ${event.homeTeam} vs ${event.awayTeam} sélectionné pour le coupon 1xBet !")
+        }
+    }
+
+    fun dismissNotification() {
+        _uiState.update { it.copy(notificationMessage = null) }
     }
 
     private fun loadEvents(sport: SportType = _uiState.value.selectedSport) {
