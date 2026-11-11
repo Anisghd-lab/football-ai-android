@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.footballai.app.core.designsystem.LiquidGlassColors
 import com.footballai.app.core.designsystem.LiquidGlassTypography
 import com.footballai.app.core.designsystem.LocalVisualEffectsLevel
@@ -66,20 +67,23 @@ fun GlassNavigationBar(
 
                 Column(
                     modifier = Modifier
+                        .weight(1f)
                         .clickable { onNavigate(item.route) }
-                        .padding(horizontal = 16.dp, vertical = 6.dp),
+                        .padding(vertical = 4.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Icon(
                         imageVector = item.icon,
                         contentDescription = item.title,
                         tint = contentColor,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(22.dp)
                     )
                     Text(
                         text = item.title,
                         style = LiquidGlassTypography.labelSmall,
-                        color = contentColor
+                        color = contentColor,
+                        maxLines = 1,
+                        fontSize = 10.sp
                     )
                 }
             }
